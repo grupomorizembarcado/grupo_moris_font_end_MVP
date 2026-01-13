@@ -16,7 +16,7 @@ function App() {
     <Router>
       <Routes>
         {/* Rota pública */}
-        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Login />} />
 
         {/* Rotas privadas */}
         <Route
@@ -24,7 +24,7 @@ function App() {
           element={
             <PrivateRoutes>
               <Routes>
-                <Route path="/" element={<Dashboard />} />
+                {/* <Route path="/" element={<Dashboard />} /> */}
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/galpoes" element={<Galpoes />} />
                 <Route path="/silos" element={<Silos />} />

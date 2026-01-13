@@ -1,0 +1,115 @@
+
+.login-container {
+  position: relative;
+  min-height: 100vh;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.login-left {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 500px;
+  height: 100vh;
+  max-height: 90vh;
+  background-color: #d9f5e5;
+  padding: 4rem 3rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.login-logo {
+  width: 80px;
+  margin-bottom: 2rem;
+}
+
+.login-left h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  color: #000;
+}
+
+.login-left p {
+  margin-bottom: 2rem;
+  color: #333;
+}
+
+/* Formulário */
+.login-form {
+  max-width: 400px;
+}
+
+.login-form label {
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+  display: block;
+  text-align: left;
+}
+
+.login-form input {
+  width: 100%;
+  padding: 0.8rem;
+  margin-bottom: 1.2rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.login-form button {
+  width: 100%;
+  padding: 0.9rem;
+  background-color: #4ea879;
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.login-right {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+
+.login-illustration {
+  position: absolute;
+  right: -120px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 380px;
+  height: 380px;
+  border-radius: 50%;
+  background-color: #eafaf1;
+}
+
+.login-illustration-bottom {
+  position: absolute;
+  left: -120px;
+  bottom: -120px;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background-color: #4ea879;
+}
+
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .login-container {
+    flex-direction: column;
+  }
+
+  .login-right {
+    display: none;
+  }
+
+  .login-left {
+    padding: 2rem;
+  }
+}
