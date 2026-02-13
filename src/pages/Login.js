@@ -45,6 +45,7 @@ function Login() {
 
         setTimeout(() => {
             setIsLoading(false);
+            localStorage.setItem("authenticated", "true");
             console.log({ email, password });
             setEmail("");
             setPassword("");
