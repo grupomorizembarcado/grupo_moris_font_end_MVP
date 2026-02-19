@@ -1,0 +1,32 @@
+.monitor-normal {
+  height: 100vh;
+  background: #111;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-size: 48px;
+}
+
+.monitor-critico {
+  height: 100vh;
+  background: #8b0000;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-size: 60px;
+  text-align: center;
+}
+
+.monitor-critico button {
+  margin-top: 40px;
+  padding: 20px 40px;
+  font-size: 30px;
+  background: black;
+  color: white;
+  border: none;
+  cursor: pointer;
+}

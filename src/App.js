@@ -10,6 +10,7 @@ import Silos from './pages/Silos';
 import Alertas from './pages/Alertas';
 import Relatorios from './pages/Relatorios';
 import PrivateRoutes from "./components/PrivateRoutes";
+import Monitor from './pages/Monitor';
 
 function App() {
   return (
@@ -17,7 +18,7 @@ function App() {
       <Routes>
         {/* Rota pública */}
         <Route path="/" element={<Login />} />
-
+        <Route path="/monitor" element={<Monitor />} />
         {/* Rotas privadas */}
         <Route
           path="/*"
@@ -32,6 +33,7 @@ function App() {
                 <Route path="/relatorios" element={<Relatorios />} />
                 <Route path="*" element={<Navigate to="/dashboard" />} />
               </Routes>
+
             </PrivateRoutes>
           }
         />
