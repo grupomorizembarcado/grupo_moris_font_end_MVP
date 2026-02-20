@@ -1,19 +1,23 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   FaBoxes,
   FaPlus,
-  FaEdit,
   FaSave,
-  FaTimes
+  FaTimes,
+  FaExclamationTriangle,
+  FaInbox,
+  FaExclamationCircle,
+  FaCheckCircle
 } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import apiService from "../services/api";
 
 const Silos = () => {
   const [silos, setSilos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -28,9 +32,10 @@ const Silos = () => {
       const data = await apiService.fetchSilos();
       setSilos(data);
     } catch (error) {
+      setError("Não foi possível carregar os silos. Tente novamente mais tarde.");
       console.error("Erro ao carregar silos:", error);
     } finally {
-      setLoading(false);
+      setLoading(false);  
     }
   };
 
@@ -46,29 +51,7 @@ const Silos = () => {
       resetForm();
     } catch (error) {
       console.error("Erro ao criar silo:", error);
-      alert("Erro ao criar silo");
-    }
-  };
-
-  const handleEdit = (silo) => {
-    setEditingId(silo.silo_id);
-    setFormData({
-      name: silo.silo_name,
-      sensorCode: silo.sensor_code,
-      minLevel: "",
-      maxLevel: ""
-    });
-  };
-
-  const handleSave = async (id) => {
-    try {
-      await apiService.updateSilo(id, formData);
-      await loadSilos();
-      setEditingId(null);
-      resetForm();
-    } catch (error) {
-      console.error("Erro ao atualizar silo:", error);
-      alert("Erro ao atualizar silo");
+      alert("Erro ao criar silo. Tente novamente mais tarde.");
     }
   };
 
@@ -81,7 +64,6 @@ const Silos = () => {
     });
   };
 
-
   if (loading) {
     return (
       <div className="content">
@@ -92,9 +74,50 @@ const Silos = () => {
     );
   }
 
+  if (error) {
+    return (
+       <div className="card p-8 text-center border-error border-2">
+         <div className="flex flex-col items-center gap-4">
+           <FaExclamationTriangle className="text-error text-4xl" />
+           <div>
+             <h3 className="text-lg font-semibold text-error mb-2">Erro ao carregar dados</h3>
+             <p className="text-gray-600">{error}</p>
+           </div>
+           <button 
+             className="btn btn-primary mt-4"
+             onClick={loadSilos}
+           >
+             Tentar novamente
+           </button>
+         </div>
+       </div>
+     );
+    }
+
+  if (silos.length === 0) {
+    return (
+      <div className="card p-12 text-center">
+        <div className="flex flex-col items-center gap-4">
+          <FaInbox className="text-gray-400 text-5xl" />
+          <div>
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">Nenhum silo cadastrado</h3>
+            <p className="text-gray-500 mb-6">
+              Comece cadastrando seu primeiro silo para monitorar os níveis de ração.
+            </p>
+            <button
+              className="btn btn-primary"
+              onClick={() => setShowModal(true)}
+            >
+              <FaPlus /> Cadastrar Primeiro Silo
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="content">
-
       {/* Header */}
       <div className="card mb-6">
         <div className="flex items-center justify-between">
@@ -115,100 +138,106 @@ const Silos = () => {
         </div>
       </div>
 
-      {/* Grid */}
+      {/* Silo Grid */}
       <div className="galp-grid">
-        {silos.map((silo) => {
-          const latestReading =
-            silo.last_20_readings?.[0];
+        {[...silos]
+          .sort((a, b) => a.silo_name.localeCompare(b.silo_name)) // Ordenação alfabética
+          .map((silo) => {
+            const latestReading = silo.last_20_readings?.[0];
+            const percentage = latestReading?.percentage ?? 0;
 
-          return (
-            <div key={silo.silo_id} className="galp-card">
-              <div className="galp-title">
-                <FaBoxes className="text-green-600" />
-                <h3>
-                  {editingId === silo.silo_id ? (
-                    <input
-                      className="form-control"
-                      value={formData.name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, name: e.target.value })
-                      }
-                    />
-                  ) : (
-                    silo.silo_name
-                  )}
-                </h3>
-              </div>
+            const getNivelColor = (value) => {
+              if (value <= 20) return 'var(--error)';      // crítico (baixo nível)
+              if (value <= 50) return 'var(--warning)';    // atenção
+              return 'var(--success)';                     // normal
+            };
 
-              <div className="galp-info">
+            const getNivelStatus = (value) => {
+              if (value <= 20) return 'Crítico';
+              if (value <= 50) return 'Atenção';
+              return 'Normal';
+            };
 
-                <div className="info-row">
-                  <span className="info-label">Código Sensor:</span>
-                  {editingId === silo.silo_id ? (
-                    <input
-                      className="form-control"
-                      value={formData.sensorCode}
-                      onChange={(e) =>
-                        setFormData({ ...formData, sensorCode: e.target.value })
-                      }
-                    />
-                  ) : (
-                    <span className="info-value code">
-                      {silo.sensor_code}
-                    </span>
-                  )}
+            const getStatusIcon = (value) => {
+              if (value <= 20) return <FaExclamationTriangle className="text-error" />;
+              if (value <= 50) return <FaExclamationCircle className="text-warning" />;
+              return <FaCheckCircle className="text-success" />;
+            };
+
+            const nivelColor = getNivelColor(percentage);
+            const nivelStatus = getNivelStatus(percentage);
+
+            return (
+              <div
+                key={silo.silo_id}
+                onClick={() => navigate(`/silos/${silo.silo_id}`)}
+                className="galp-card cursor-pointer transition hover:scale-[1.02]"
+                style={{ borderLeft: `4px solid ${nivelColor}` }}
+              >
+                {/* Header */}
+                <div className="galp-title">
+                  <div className="flex items-center gap-2 ml-auto" style={{ color: nivelColor }}>
+                    {getStatusIcon(percentage)}
+                  </div>
+                  <h3>{silo.silo_name}</h3>
                 </div>
 
-                {latestReading && (
-                  <>
-                    <div className="info-row">
-                      <span className="info-label">Percentual:</span>
-                      <span className="info-value font-semibold">
-                        {latestReading.percentage.toFixed(1)}%
-                      </span>
-                    </div>
-
-                    <div className="info-row">
-                      <span className="info-label">Última leitura:</span>
-                      <span className="info-value">
-                        {new Date(latestReading.timestamp).toLocaleString()}
-                      </span>
-                    </div>
-                  </>
-                )}
-
-                {/* Actions */}
-                <div className="flex gap-2 pt-4 border-t mt-4">
-                  {editingId === silo.silo_id ? (
+                <div className="galp-info">
+                  {latestReading ? (
                     <>
-                      <button
-                        className="btn btn-primary btn-sm flex-1"
-                        onClick={() => handleSave(silo.silo_id)}
-                      >
-                        <FaSave /> Salvar
-                      </button>
-                      <button
-                        className="btn btn-secondary btn-sm flex-1"
-                        onClick={() => setEditingId(null)}
-                      >
-                        <FaTimes /> Cancelar
-                      </button>
+                      {/* Nível do Silo */}
+                      <div className="metric-row">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm text-gray-600 flex items-center gap-2">
+                            <FaBoxes /> Nível do Silo
+                          </span>
+                          <span className="font-medium">
+                            {percentage.toFixed(2)}%
+                          </span>
+                        </div>
+
+                        {/* Barra de progresso */}
+                        <div className="metric-bar">
+                          <div
+                            className="bar-fill"
+                            style={{
+                              width: `${percentage}%`,
+                              backgroundColor: nivelColor
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+
+                      {/* Última leitura */}
+                      <div className="flex items-center justify-between pt-4 border-t border-border mt-4">
+                        <div>
+                          <div className="text-sm text-gray-600">Última leitura:</div>
+                          <div className="font-medium">
+                            {new Date(latestReading.timestamp).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
                     </>
                   ) : (
-                    <button
-                      className="btn btn-secondary btn-sm flex-1"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEdit(silo);
-                      }}>
-                      <FaEdit /> Editar
-                    </button>
+                    <p className="text-gray-500 text-sm">Sem leituras</p>
+                  )}
+                  {/* Alerta para nível crítico */}
+                  {percentage <= 20 && (
+                    <div className="mt-4 pt-4 border-t border-border">
+                      <div className="flex items-start gap-2">
+                        <FaExclamationTriangle className="text-error mt-0.5" />
+                        <div className="flex flex-wrap gap-1">
+                          <span className="badge badge-error text-xs">
+                            Nível crítico - Reabastecer urgente
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
       </div>
 
       {/* Modal Criar */}
@@ -254,40 +283,29 @@ const Silos = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="form-group">
-                  <label className="form-label">Nível Mínimo</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={formData.minLevel}
-                    onChange={(e) =>
-                      setFormData({ ...formData, minLevel: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Nível Máximo</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={formData.maxLevel}
-                    onChange={(e) =>
-                      setFormData({ ...formData, maxLevel: e.target.value })
-                    }
-                  />
-                </div>
+                <input
+                  type="number"
+                  className="form-control"
+                  placeholder="Min"
+                  value={formData.minLevel}
+                  onChange={(e) =>
+                    setFormData({ ...formData, minLevel: e.target.value })
+                  }
+                />
+                <input
+                  type="number"
+                  className="form-control"
+                  placeholder="Max"
+                  value={formData.maxLevel}
+                  onChange={(e) =>
+                    setFormData({ ...formData, maxLevel: e.target.value })
+                  }
+                />
               </div>
             </div>
 
             <div className="modal-footer">
-              <button
-                className="btn btn-secondary"
-                onClick={() => {
-                  setShowModal(false);
-                  resetForm();
-                }}
-              >
+              <button className="btn btn-secondary" onClick={() => setShowModal(false)}>
                 Cancelar
               </button>
               <button
@@ -301,7 +319,6 @@ const Silos = () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };
