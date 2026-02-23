@@ -1,0 +1,51 @@
+.header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.button-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.alert-item {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+
+.alerta-critico-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f9f9f9;
+  padding: 20px;
+  margin-top: 20px;
+  border-radius: 10px;
+  border-left: 6px solid #d90429;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.titulo-critico {
+  color: #d90429;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.alerta-info {
+  margin-top: 10px;
+  display: flex;
+  gap: 20px;
+  font-size: 14px;
+}
