@@ -157,7 +157,7 @@ body {
 }
 
 .card-title {
-  font-size: 1.25rem;
+  font-size: 3.25rem;
   font-weight: 600;
   color: var(--text-primary);
   display: flex;
@@ -558,3 +558,5 @@ body {
     width: 95%;
   }
 }
+
+

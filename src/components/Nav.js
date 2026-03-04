@@ -13,7 +13,7 @@ const Nav = () => {
     { path: '/dashboard', icon: <FaTachometerAlt />, label: 'Dashboard' },
     { path: '/galpoes', icon: <FaWarehouse />, label: 'Galpões' },
     { path: '/silos', icon: <FaIndustry />, label: 'Silos' },
-    { path: '/alertas', icon: <FaBell />, label: 'Alertas' },
+    { path: '/notificacoes', icon: <FaBell />, label: 'Notificações' },
     { path: '/relatorios', icon: <FaChartBar />, label: 'Relatórios' }
   ];
 

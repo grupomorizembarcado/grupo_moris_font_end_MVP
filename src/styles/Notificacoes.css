@@ -1,0 +1,101 @@
+.header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.button-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Card Crítico */
+.alerta-critico-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  padding: 20px;
+  margin: 20px 0;
+  border-left: 8px solid #e53935;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.titulo-critico {
+  color: #b71c1c;
+  font-weight: 800;
+}
+
+.alerta-critico-grid {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Tabela */
+.alert-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 10px;
+}
+
+.alert-table th {
+  background: #f3f4f6;
+  padding: 12px;
+  text-align: left;
+}
+
+.alert-table td {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.badge {
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: bold;
+  color: white;
+}
+
+.badge-red {
+  background: #ef4444;
+}
+
+.badge-green {
+  background: #22c55e;
+}
+
+.status-ativa {
+  font-weight: bold;
+  color: #111827;
+}
+
+.status-resolvido {
+  font-weight: bold;
+  color: #16a34a;
+}
+
+.link-action {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.link-action.green {
+  color: #16a34a;
+}
