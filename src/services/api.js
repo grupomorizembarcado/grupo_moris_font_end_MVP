@@ -100,7 +100,7 @@ class ApiService {
   // ================= SILOS (API REAL)
   // ======================================
 
-  async fetchSilos() {
+  async getSilos() {
     const response = await fetch(`${SILO_API_BASE_URL}/silos`);
 
     console.log("Status:", response.status);
@@ -113,16 +113,6 @@ class ApiService {
     }
 
     return data;
-  }
-
-  async getSilos() {
-    const response = await fetch(`${SILO_API_BASE_URL}/silos`);
-
-    if (!response.ok) {
-      throw new Error('Erro ao buscar silos');
-    }
-
-    return await response.json();
   }
 
   async createSilo(data) {

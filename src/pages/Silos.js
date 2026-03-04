@@ -1,14 +1,6 @@
 import { useState, useEffect } from "react";
-import {
-  FaBoxes,
-  FaPlus,
-  FaSave,
-  FaTimes,
-  FaExclamationTriangle,
-  FaInbox,
-  FaExclamationCircle,
-  FaCheckCircle
-} from "react-icons/fa";
+import { FaBoxes, FaPlus, FaSave, FaTimes,
+  FaExclamationTriangle, FaExclamationCircle, FaCheckCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import apiService from "../services/api";
 
@@ -29,7 +21,7 @@ const Silos = () => {
   const loadSilos = async () => {
     setLoading(true);
     try {
-      const data = await apiService.fetchSilos();
+      const data = await apiService.getSilos();
       setSilos(data);
     } catch (error) {
       setError("Não foi possível carregar os silos. Tente novamente mais tarde.");
@@ -76,40 +68,42 @@ const Silos = () => {
 
   if (error) {
     return (
-       <div className="card p-8 text-center border-error border-2">
-         <div className="flex flex-col items-center gap-4">
-           <FaExclamationTriangle className="text-error text-4xl" />
-           <div>
-             <h3 className="text-lg font-semibold text-error mb-2">Erro ao carregar dados</h3>
-             <p className="text-gray-600">{error}</p>
-           </div>
-           <button 
-             className="btn btn-primary mt-4"
-             onClick={loadSilos}
-           >
-             Tentar novamente
-           </button>
-         </div>
-       </div>
+      <div className="content">
+        <div className="card mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-error mb-2">Erro ao carregar dados</h3>
+              <p className="text-gray-600">{error}</p>
+            </div>
+            <button 
+              className="btn btn-primary mt-4"
+              onClick={loadSilos}
+            >
+              Tentar novamente
+            </button>
+          </div>
+        </div>
+      </div>
      );
     }
 
   if (silos.length === 0) {
     return (
-      <div className="card p-12 text-center">
-        <div className="flex flex-col items-center gap-4">
-          <FaInbox className="text-gray-400 text-5xl" />
-          <div>
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Nenhum silo cadastrado</h3>
-            <p className="text-gray-500 mb-6">
-              Comece cadastrando seu primeiro silo para monitorar os níveis de ração.
-            </p>
-            <button
-              className="btn btn-primary"
-              onClick={() => setShowModal(true)}
-            >
-              <FaPlus /> Cadastrar Primeiro Silo
-            </button>
+      <div className="content">
+        <div className="card mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">Nenhum silo cadastrado</h3>
+              <p className="text-gray-500 mb-6">
+                Comece cadastrando seu primeiro silo para monitorar os níveis de ração.
+              </p>
+              <button
+                className="btn btn-primary"
+                onClick={() => setShowModal(true)}
+              >
+                <FaPlus /> Cadastrar Primeiro Silo
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -152,12 +146,6 @@ const Silos = () => {
               return 'var(--success)';                     // normal
             };
 
-            const getNivelStatus = (value) => {
-              if (value <= 20) return 'Crítico';
-              if (value <= 50) return 'Atenção';
-              return 'Normal';
-            };
-
             const getStatusIcon = (value) => {
               if (value <= 20) return <FaExclamationTriangle className="text-error" />;
               if (value <= 50) return <FaExclamationCircle className="text-warning" />;
@@ -165,7 +153,6 @@ const Silos = () => {
             };
 
             const nivelColor = getNivelColor(percentage);
-            const nivelStatus = getNivelStatus(percentage);
 
             return (
               <div
