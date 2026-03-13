@@ -100,6 +100,9 @@ class ApiService {
   // ================= SILOS (API REAL)
   // ======================================
 
+
+  
+
   async getSilos() {
     const response = await fetch(`${SILO_API_BASE_URL}/silos`);
 
@@ -114,6 +117,7 @@ class ApiService {
 
     return data;
   }
+
 
   async createSilo(data) {
     const response = await fetch(`${SILO_API_BASE_URL}/silo`, {

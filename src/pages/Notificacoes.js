@@ -1,134 +1,210 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Button from "../components/ui/Button";
 import { FaSyncAlt } from "react-icons/fa";
+// import apiService from "../services/api";
 import "../styles/Notificacoes.css";
 
-/* =========================
-   LIMITES DO SISTEMA
-========================= */
-const LIMITES = {
-  temperaturaAlta: 35,
-  umidadeAlta: 80,
-  racaoBaixa: 20,
-};
+const BASE_URL = "https://api-granjatech.onrender.com"; 
 
-/* =========================
-   FUNÇÃO CRÍTICA
-========================= */
-function isCritico(alerta) {
-  const tipo = alerta.tipo.toLowerCase();
-
-  if (tipo.includes("temperatura") && alerta.valor >= LIMITES.temperaturaAlta) return true;
-  if (tipo.includes("umidade") && alerta.valor >= LIMITES.umidadeAlta) return true;
-  if (tipo.includes("ração") && alerta.nivelRacao <= LIMITES.racaoBaixa) return true;
-
-  return false;
+function formatarData(iso) {
+  if (!iso) return "-";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return String(iso);
+  return d.toLocaleString("pt-BR");
 }
 
-function formatarData(data) {
-  return new Date(data).toLocaleString("pt-BR");
+function normalizeStatus(s) {
+  return String(s || "").trim().toLowerCase(); 
+}
+
+function makeRow({ shed, tipo, valorMedio, status, timestamp }) {
+  const nivel = normalizeStatus(status) === "alerta" ? "critico" : "normal";
+
+  const unidade = tipo === "Temperatura" ? "°C" : "%";
+  const descricao = `${tipo} média: ${valorMedio ?? "-"}${unidade}`;
+
+  return {
+    id: `${shed.id || shed._id || shed.shed_id}-${tipo}-${timestamp}`,
+    tipo,
+    galpao: shed.name || shed.shed_name || `Galpão ${shed.id ?? shed.shed_id ?? ""}`,
+    descricao,
+    data: timestamp,
+    nivel,                 
+    status: status || "-",
+    reconhecido: false,
+  };
 }
 
 const Notificacoes = () => {
-  const [alertas, setAlertas] = useState([]);
-  const [alertaCritico, setAlertaCritico] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [historico, setHistorico] = useState([]);
+  const [overviews, setOverviews] = useState([]); 
 
-  /* =========================
-     DADOS FALSOS
-  ========================= */
-  const fetchAlertas = () => {
-    setLoading(true);
+  const fetchDados = async () => {
+    try {
+      setLoading(true);
 
-    setTimeout(() => {
-      const listaFake = [
-        {
-          id: 1,
-          tipo: "Temperatura",
-          descricao: "Temperatura acima do limite (38°C)",
-          valor: 38,
-          galpao: "Galpão 1",
-          silo: "Silo A",
-          data: new Date(),
-          reconhecido: false,
-        },
-        {
-          id: 2,
-          tipo: "Umidade",
-          descricao: "Umidade elevada (85%)",
-          valor: 85,
-          galpao: "Galpão 2",
-          silo: "Silo B",
-          data: new Date(),
-          reconhecido: false,
-        },
-        {
-          id: 3,
-          tipo: "Ração",
-          descricao: "Nível de ração baixo (15%)",
-          nivelRacao: 15,
-          galpao: "Galpão 3",
-          silo: "Silo C",
-          data: new Date(),
-          reconhecido: false,
-        },
-        {
-          id: 4,
-          tipo: "Temperatura",
-          descricao: "Temperatura normal (28°C)",
-          valor: 28,
-          galpao: "Galpão 1",
-          silo: "Silo A",
-          data: new Date(),
-          reconhecido: false,
-        },
-      ];
+      // 1) Lista de silos
+      const shedsResp = await fetch(`${BASE_URL}/api/silos`);
+      const sheds = await shedsResp.json();
+      console.log('Response from API:', shedsResp);
+      console.log('Sheds data:', sheds);
 
-      setAlertas(listaFake);
+      // 2) Overview de cada silo (em paralelo)
+      const overviewPromises = sheds.map(async (shed) => {
+        const shedId = shed.silo_id ?? shed._id ?? shed.shed_id;
+        if (!shedId) return null;
 
-      const critico = listaFake.find((a) => isCritico(a) && !a.reconhecido);
-      setAlertaCritico(critico || null);
+        const ovResp = await fetch(`${BASE_URL}/api/environment/latest`);
+        const overview = await ovResp.json(); // Usar .json() para obter a resposta
+        return { shed, overview };
+      });
 
+      const results = (await Promise.all(overviewPromises)).filter(Boolean);
+      setOverviews(results);
+
+      // 3) Gerar linhas do histórico com base em estatísticas
+      const novasLinhas = [];
+
+      for (const item of results) {
+        const { shed, overview } = item;
+        const stats = overview?.data || null; // A resposta do ambiente tem os dados em "data"
+        if (!stats) continue;
+
+        const timestamp =
+          overview?.timestamp ||
+          overview?.updatedAt ||
+          overview?.createdAt ||
+          new Date().toISOString();
+
+        // Temperatura
+        if (stats.temperature != null) {
+          novasLinhas.push(
+            makeRow({
+              shed,
+              tipo: "Temperatura",
+              valorMedio: Number(stats.temperature),
+              status: stats.status_temperatura,
+              timestamp,
+            })
+          );
+        }
+
+        // Umidade
+        if (stats.humidity != null) {
+          novasLinhas.push(
+            makeRow({
+              shed,
+              tipo: "Umidade",
+              valorMedio: Number(stats.humidity),
+              status: stats.status_umidade,
+              timestamp,
+            })
+          );
+        }
+      }
+
+      // 4) Verificação dos silos para quantidade de ração (percentual < 40%)
+      sheds.forEach((silo) => {
+        const { silo_name, last_20_readings } = silo;
+
+        // Verifica os alertas de quantidade de ração (percentage < 40%)
+        if (last_20_readings && last_20_readings.length > 0) {
+          last_20_readings.forEach((reading) => {
+            if (reading.percentage < 40) {
+              novasLinhas.push(
+                makeRow({
+                  shed: { name: silo_name },
+                  tipo: "Ração",
+                  valorMedio: Number(reading.level_value),
+                  status: "alerta",
+                  timestamp: reading.timestamp,
+                })
+              );
+            }
+          });
+        }
+      });
+
+      // 5) Mescla com o histórico existente, sem duplicar
+      setHistorico((prev) => {
+        const ids = new Set(prev.map((x) => x.id));
+        const add = novasLinhas.filter((x) => !ids.has(x.id));
+
+        const combinado = [...add, ...prev];
+        combinado.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+        return combinado;
+      });
+
+    } catch (e) {
+      console.error("Erro ao buscar dados:", e);
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
   useEffect(() => {
-    fetchAlertas();
+    fetchDados();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* =========================
-     RECONHECER ALERTA
-  ========================= */
-  const reconhecerAlerta = (id) => {
-    setAlertas((prev) => {
-      const atualizados = prev.map((a) =>
-        a.id === id ? { ...a, reconhecido: true } : a
-      );
+  // Card crítico: primeiro galpão onde status_temperatura ou status_umidade == "alerta"
+  const alertaCritico = useMemo(() => {
+    for (const item of overviews) {
+      const { shed, overview } = item;
+      const stats = overview?.data || null;
+      if (!stats) continue;
 
-      const proximoCritico = atualizados.find(
-        (a) => isCritico(a) && !a.reconhecido
-      );
+      const stTemp = normalizeStatus(stats.status_temperatura);
+      const stHum = normalizeStatus(stats.status_umidade);
 
-      setAlertaCritico(proximoCritico || null);
+      const motivos = [];
+      if (stTemp === "alerta") motivos.push(`Temperatura em alerta (média: ${stats.temperature}°C)`);
+      if (stHum === "alerta") motivos.push(`Umidade em alerta (média: ${stats.humidity}%)`);
 
-      return atualizados;
-    });
+      if (motivos.length > 0) {
+        const timestamp =
+          overview?.timestamp ||
+          overview?.updatedAt ||
+          overview?.createdAt ||
+          new Date().toISOString();
+
+        return {
+          id: `CRIT-${shed.silo_id || shed._id || shed.shed_id}-${timestamp}`,
+          galpao: shed.name || shed.shed_name || `Galpão ${shed.silo_id ?? shed.shed_id ?? ""}`,
+          descricao: motivos.join(" | "),
+          data: timestamp,
+        };
+      }
+    }
+    return null;
+  }, [overviews]);
+
+  // Reconhecer alerta
+  const reconhecerAlerta = () => {
+    if (!alertaCritico) return;
+
+    setHistorico((prev) =>
+      prev.map((h) => {
+        const mesmoGalpao = h.galpao === alertaCritico.galpao;
+        if (mesmoGalpao && h.nivel === "critico" && !h.reconhecido) {
+          return { ...h, reconhecido: true, status: "resolvido" };
+        }
+        return h;
+      })
+    );
   };
 
   return (
     <div className="content">
       <div className="card mb-6">
-
         <div className="card-header header-flex">
           <div>
             <h1 className="card-title">Alertas</h1>
-            <p className="text-gray-600 text-sm">
-              Monitoramento de eventos do sistema.
-            </p>
+            <p className="text-gray-600 text-sm">Monitoramento de eventos do sistema.</p>
           </div>
 
-          <Button onClick={fetchAlertas} disabled={loading} variant="success">
+          <Button onClick={fetchDados} disabled={loading} variant="success">
             <div className="button-content">
               <FaSyncAlt className={loading ? "spin" : ""} />
               {loading ? "Atualizando..." : "Atualizar"}
@@ -136,34 +212,30 @@ const Notificacoes = () => {
           </Button>
         </div>
 
-        {/* =========================
-            CARD ALERTA CRÍTICO
-        ========================= */}
+        {/* Card crítico (aparece só se status_* == "alerta") */}
         {alertaCritico && (
           <div className="alerta-critico-card">
-            <div>
+            <div className="alerta-critico-left">
               <h2 className="titulo-critico">ALERTA CRÍTICO</h2>
-              <p>{alertaCritico.descricao}</p>
+              <p className="sub-critico">{alertaCritico.descricao}</p>
 
               <div className="alerta-critico-grid">
-                <div><strong>Galpão:</strong> {alertaCritico.galpao}</div>
-                <div><strong>Silo:</strong> {alertaCritico.silo}</div>
-                <div><strong>Data:</strong> {formatarData(alertaCritico.data)}</div>
+                <div>
+                  <span className="label">Galpão:</span> <strong>{alertaCritico.galpao}</strong>
+                </div>
+                <div>
+                  <span className="label">Data:</span> <strong>{formatarData(alertaCritico.data)}</strong>
+                </div>
               </div>
             </div>
 
-            <Button
-              variant="success"
-              onClick={() => reconhecerAlerta(alertaCritico.id)}
-            >
+            <Button variant="success" onClick={reconhecerAlerta}>
               Reconhecer alerta
             </Button>
           </div>
         )}
 
-        {/* =========================
-            HISTÓRICO (SEMPRE)
-        ========================= */}
+        {/* Histórico permanente */}
         <div className="card-body">
           <div className="table-wrapper">
             <table className="alert-table">
@@ -171,51 +243,51 @@ const Notificacoes = () => {
                 <tr>
                   <th>Tipo</th>
                   <th>Galpão</th>
-                  <th>Silo</th>
                   <th>Descrição</th>
                   <th>Data</th>
                   <th>Status</th>
-                  <th>Ações</th>
                 </tr>
               </thead>
 
               <tbody>
-                {alertas.map((alerta) => (
-                  <tr key={alerta.id}>
-                    <td>
-                      <span className={`badge ${isCritico(alerta) ? "badge-red" : "badge-green"}`}>
-                        {alerta.tipo}
-                      </span>
-                    </td>
-                    <td>{alerta.galpao}</td>
-                    <td>{alerta.silo}</td>
-                    <td>{alerta.descricao}</td>
-                    <td>{formatarData(alerta.data)}</td>
-                    <td>
-                      {alerta.reconhecido ? (
-                        <span className="status-resolvido">Resolvido</span>
-                      ) : (
-                        <span className="status-ativa">Ativa</span>
-                      )}
-                    </td>
-                    <td>
-                      {!alerta.reconhecido && isCritico(alerta) && (
-                        <button
-                          className="link-action green"
-                          onClick={() => reconhecerAlerta(alerta.id)}
-                        >
-                          Reconhecer
-                        </button>
-                      )}
-                    </td>
+                {loading && (
+                  <tr>
+                    <td colSpan="5" className="table-empty">Carregando...</td>
                   </tr>
-                ))}
-              </tbody>
+                )}
 
+                {!loading && historico.length === 0 && (
+                  <tr>
+                    <td colSpan="5" className="table-empty">Nenhum evento no histórico.</td>
+                  </tr>
+                )}
+
+                {!loading &&
+                  historico.map((a) => (
+                    <tr key={a.id}>
+                      <td>
+                        <span className={`badge ${a.nivel === "critico" ? "badge-red" : "badge-green"}`}>
+                          {a.tipo.toUpperCase()}
+                        </span>
+                      </td>
+                      <td>{a.galpao}</td>
+                      <td className="descricao-col">{a.descricao}</td>
+                      <td>{formatarData(a.data)}</td>
+                      <td>
+                        <span className={`status ${a.reconhecido ? "status-resolvido" : "status-ativa"}`}>
+                          {a.reconhecido ? "Resolvido" : a.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
             </table>
           </div>
-        </div>
 
+          {/* <p className="text-gray-600 text-sm" style={{ marginTop: 10 }}>
+            * Criticidade vem do backend via <code>estatisticas.status_temperatura</code> e <code>estatisticas.status_umidade</code>.
+          </p> */}
+        </div>
       </div>
     </div>
   );
