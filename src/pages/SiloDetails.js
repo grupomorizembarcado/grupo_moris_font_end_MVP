@@ -1,24 +1,9 @@
 import { useState, useEffect } from "react";
-import {
-  FaArrowLeft,
-  FaEdit,
-  FaTimes,
-  FaSave,
-  FaTrash,
-  FaChartLine,
-} from "react-icons/fa";
+import { FaArrowLeft, FaEdit, FaTimes, FaSave, FaTrash,  FaChartLine} from "react-icons/fa";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer} from "recharts";
 import apiService from "../services/api";
+import LoadingState from "../components/silos/LoadingState";
 
 const SiloDetails = () => {
   const { id } = useParams();
@@ -26,9 +11,7 @@ const SiloDetails = () => {
 
   const [silo, setSilo] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showEdit, setShowEdit] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [formData, setFormData] = useState({ name: "", sensorCode: "" });
   const [showEditModal, setShowEditModal] = useState(false);
   const [editFormData, setEditFormData] = useState({
     name: "",
@@ -39,7 +22,7 @@ const SiloDetails = () => {
 
    useEffect(() => {
     loadSiloDetails();
-  }, [id]);
+  },[id]);
 
   const loadSiloDetails = async () => {
     setLoading(true);
@@ -62,19 +45,6 @@ const SiloDetails = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Padrão de cores do dashboard
-  const getStatusColor = (percentage) => {
-    if (percentage <= 20) return "bg-red-100 border-red-300 text-red-800";
-    if (percentage <= 50) return "bg-yellow-100 border-yellow-300 text-yellow-800";
-    return "bg-green-100 border-green-300 text-green-800";
-  };
-
-  const getStatusLabel = (percentage) => {
-    if (percentage <= 20) return "Crítico";
-    if (percentage <= 50) return "Atenção";
-    return "Cheio";
   };
 
   const getBarColor = (percentage) => {
@@ -123,13 +93,7 @@ const SiloDetails = () => {
 };
 
   if (loading) {
-    return (
-      <div className="content">
-        <div className="card p-8 text-center">
-          <p>Carregando detalhes do silo...</p>
-        </div>
-      </div>
-    );
+    return <LoadingState />;
   }
 
   if (!silo) {
@@ -148,12 +112,6 @@ const SiloDetails = () => {
   }
 
   const latestReading = silo.last_20_readings?.[0];
-  const statusColor = latestReading
-    ? getStatusColor(latestReading.percentage)
-    : "bg-gray-100 border-gray-300 text-gray-800";
-  const statusLabel = latestReading
-    ? getStatusLabel(latestReading.percentage)
-    : "N/A";
 
   return (
     <div className="content">
@@ -183,58 +141,68 @@ const SiloDetails = () => {
         <div className="max-w-6xl mx-auto">
           
           {/* Info Card */}
-          <div className="card bg-base-200 shadow-xl p-8 mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="saas-card">
+          <div className="silo-card-layout">
 
-              {/* Info */}
-              <div>
-                <h3 className="text-base-content/70 mb-6">
-                  Código do Sensor: {silo.sensor_code}
-                </h3>
+            {/* INFORMAÇÕES */}
+            <div className="silo-info">
+              <h3 className="silo-sensor">
+                Código do Sensor: {silo.sensor_code}
+              </h3>
 
-                {latestReading && (
-                  <div className="space-y-4">
-                    <div className="mb-6">
-                      <span>Percentual: </span>
-                      <span className="text-3xl font-bold text-primary">
-                        {latestReading.percentage.toFixed(2)}%
-                      </span>
-                    </div>
-
-                    <div className="mb-6">
-                      <span>Última Leitura: </span>
-                      <span>
-                        {new Date(latestReading.timestamp).toLocaleString("pt-BR")}
-                      </span>
-                    </div>
+              {latestReading && (
+                <div className="silo-reading">
+                  <div className="silo-percentage-text">
+                    Percentual:
+                    <span>
+                      {latestReading.percentage.toFixed(2)}%
+                    </span>
                   </div>
-                )}
-                {silo.min_level !== undefined && silo.max_level !== undefined && (
-                <div className="mt-6 pt-6 border-t border-slate-200">
-                  <h3 className="font-semibold text-slate-800 mb-3">
-                    Limites Configurados
-                  </h3>
-                  <div className="space-y-2">
-                    <div className="mb-6">
-                      <span className="text-slate-600">Mínimo: </span>
-                      <span className="font-medium text-slate-800">
-                        {silo.min_level}
-                      </span>
+                  <div className="silo-last-reading">
+                    Última leitura:
+                    {new Date(latestReading.timestamp).toLocaleString("pt-BR")}
+                  </div>
+                </div>
+              )}
+
+              {silo.min_level !== undefined && silo.max_level !== undefined && (
+
+                <div className="silo-limits">
+                  <h4>Limites Configurados</h4>
+                  <div className="limits-grid">
+                    <div className="limit-box">
+                      <span>Mínimo: </span>
+                      <strong>{silo.min_level}</strong>
                     </div>
-                    <div className="mb-6">
-                      <span className="text-slate-600">Máximo: </span>
-                      <span className="font-medium text-slate-800">
-                        {silo.max_level}
-                      </span>
+                    <div className="limit-box">
+                      <span>Máximo: </span>
+                      <strong>{silo.max_level}</strong>
                     </div>
                   </div>
                 </div>
               )}
-              </div>
             </div>
-          </div>
 
-          {/* Chart */}
+            {/* INDICADOR VISUAL */}
+            {latestReading && (
+              <div className="silo-visual">
+                <div className="silo-tank">
+                  <div
+                    className="silo-fill"
+                    style={{
+                      height: `${latestReading.percentage}%`,
+                      background: getBarColor(latestReading.percentage)
+                    }}
+                  />
+                </div>
+                <div className="silo-percentage">
+                  {latestReading.percentage.toFixed(1)}%
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+          {/* Grafico */}
           {chartData.length > 0 && (
             <div className="card bg-base-200 shadow-xl p-8">
               <div className="flex items-center gap-3 mb-6">
@@ -243,7 +211,6 @@ const SiloDetails = () => {
                   Histórico de Leituras
                 </h2>
               </div>
-
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -268,26 +235,34 @@ const SiloDetails = () => {
 
     {/* EDIT MODAL */}
     {showEditModal && (
-      <div className="modal-overlay">
-        <div className="modal">
-          <div className="modal-header">
-            <h2 className="card-title">
-              <FaEdit /> Editar Silo
-            </h2>
+      <div className="saas-modal-overlay">
+        <div className="saas-modal">
 
+          {/* HEADER */}
+          <div className="saas-modal-header">
+            <div className="saas-modal-title">
+              <div className="saas-modal-icon">
+                <FaEdit />
+              </div>
+              <div>
+                <h2>Editar Silo</h2>
+                <span>Atualize as informações do silo</span>
+              </div>
+            </div>
             <button
-              className="btn btn-secondary"
+              className="saas-modal-close"
               onClick={() => setShowEditModal(false)}
             >
               <FaTimes />
             </button>
           </div>
 
-          <div className="modal-body">
-            <div className="form-group">
-              <label className="form-label">Nome *</label>
+          {/* BODY */}
+          <div className="saas-modal-body">
+            <div className="saas-form-group">
+              <label>Nome do silo *</label>
               <input
-                className="form-control"
+                type="text"
                 value={editFormData.name}
                 onChange={(e) =>
                   setEditFormData({
@@ -297,11 +272,10 @@ const SiloDetails = () => {
                 }
               />
             </div>
-
-            <div className="form-group">
-              <label className="form-label">Código do Sensor *</label>
+            <div className="saas-form-group">
+              <label>Código do Sensor *</label>
               <input
-                className="form-control"
+                type="text"
                 value={editFormData.sensorCode}
                 onChange={(e) =>
                   setEditFormData({
@@ -312,13 +286,12 @@ const SiloDetails = () => {
               />
             </div>
 
-            {/* MIN / MAX LADO A LADO */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="form-group">
-                <label className="form-label">Nível mínimo</label>
+            {/* MIN MAX */}
+            <div className="saas-grid">
+              <div className="saas-form-group">
+                <label>Nível mínimo</label>
                 <input
                   type="number"
-                  className="form-control"
                   value={editFormData.minLevel}
                   onChange={(e) =>
                     setEditFormData({
@@ -329,11 +302,10 @@ const SiloDetails = () => {
                 />
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Nível máximo</label>
+              <div className="saas-form-group">
+                <label>Nível máximo</label>
                 <input
                   type="number"
-                  className="form-control"
                   value={editFormData.maxLevel}
                   onChange={(e) =>
                     setEditFormData({
@@ -346,71 +318,87 @@ const SiloDetails = () => {
             </div>
           </div>
 
-          <div className="modal-footer">
+          {/* FOOTER */}
+          <div className="saas-modal-footer">
             <button
-              className="btn btn-secondary"
+              className="saas-btn-secondary"
               onClick={() => setShowEditModal(false)}
             >
               Cancelar
             </button>
-
             <button
-              className="btn btn-primary"
+              className="saas-btn-primary"
               onClick={handleEditSave}
               disabled={!editFormData.name || !editFormData.sensorCode}
             >
-              <FaSave /> Salvar
+              <FaSave />
+              Salvar Alterações
             </button>
           </div>
         </div>
       </div>
     )}
 
-
     {/* DELETE MODAL */}
     {showDeleteModal && (
-      <div className="modal-overlay">
-        <div className="modal">
-          <div className="modal-header">
-            <h2 className="card-title">
-              <FaTrash /> Deletar Silo
-            </h2>
+      <div className="saas-modal-overlay">
+        <div className="saas-modal">
 
+          {/* HEADER */}
+          <div className="saas-modal-header">
+            <div className="saas-modal-title">
+              <div className="saas-modal-icon" style={{background:"#fee2e2", color:"#dc2626"}}>
+                <FaTrash />
+              </div>
+              <div>
+                <h2>Deletar Silo</h2>
+                <span>Esta ação é permanente</span>
+              </div>
+            </div>
             <button
-              className="btn btn-secondary"
+              className="saas-modal-close"
               onClick={() => setShowDeleteModal(false)}
             >
               <FaTimes />
             </button>
           </div>
 
-          <div className="modal-body text-center">
-            <p className="text-lg">
+          {/* BODY */}
+          <div className="saas-modal-body" style={{textAlign:"center"}}>
+            <p style={{fontSize:"15px"}}>
               Tem certeza que deseja deletar o silo:
             </p>
-
-            <p className="font-bold text-xl mt-2">
+            <p style={{
+              fontWeight:"600",
+              fontSize:"18px",
+              marginTop:"4px"
+            }}>
               {silo.silo_name}
             </p>
-
-            <p className="text-sm text-gray-500 mt-4">
-              Esta ação não pode ser desfeita.
+            <p style={{
+              fontSize:"13px",
+              color:"#666",
+              marginTop:"10px"
+            }}>
+              Todos os dados associados a este silo serão removidos permanentemente.
             </p>
           </div>
 
-          <div className="modal-footer">
+          {/* FOOTER */}
+          <div className="saas-modal-footer">
             <button
-              className="btn btn-secondary"
+              className="saas-btn-secondary"
               onClick={() => setShowDeleteModal(false)}
             >
               Cancelar
             </button>
-
             <button
-              className="btn btn-error"
+              className="saas-btn-primary"
+              style={{background:"#dc2626"}}
               onClick={handleDeleteConfirm}
             >
-              <FaTrash /> Deletar
+              <FaTrash />
+              Deletar Silo
             </button>
           </div>
         </div>

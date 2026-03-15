@@ -59,6 +59,11 @@ const Silos = () => {
     });
   };
 
+  const handleClose = () => {
+    setShowModal(false);
+    resetForm();
+  };
+
   if (loading) {
     return <LoadingState />;
   }
@@ -232,93 +237,111 @@ const Silos = () => {
      
       {/* Modal Criar */}
       {showModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <div className="modal-header">
-              <h2 className="card-title">
-                <FaPlus /> Novo Silo
-              </h2>
-              <button
-                className="btn btn-secondary"
-                onClick={() => {
-                  setShowModal(false);
-                  resetForm();
-                }}
-              >
-                <FaTimes />
-              </button>
+      <div className="saas-modal-overlay">
+        <div className="saas-modal">
+
+          {/* HEADER */}
+          <div className="saas-modal-header">
+            <div className="saas-modal-title">
+              <div className="saas-modal-icon">
+                <FaPlus />
+              </div>
+              <div>
+                <h2>Novo Silo</h2>
+                <span>Adicionar novo sensor ao sistema</span>
+              </div>
+            </div>
+            <button
+              className="saas-modal-close"
+              onClick={handleClose}
+            >
+              <FaTimes />
+            </button>
+          </div>
+
+          {/* BODY */}
+          <div className="saas-modal-body">
+            <div className="saas-form-group">
+              <label>Nome do silo *</label>
+              <input
+                type="text"
+                placeholder="Ex: Silo Principal"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    name: e.target.value
+                  })
+                }
+              />
+            </div>
+            <div className="saas-form-group">
+              <label>Código do Sensor *</label>
+              <input
+                type="text"
+                placeholder="Ex: SENSOR-001"
+                value={formData.sensorCode}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    sensorCode: e.target.value
+                  })
+                }
+              />
             </div>
 
-            <div className="modal-body">
-              <div className="form-group">
-                <label className="form-label">Nome *</label>
-                <input
-                  className="form-control"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Código do Sensor *</label>
-                <input
-                  className="form-control"
-                  value={formData.sensorCode}
-                  onChange={(e) =>
-                    setFormData({ ...formData, sensorCode: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-              <div className="form-group">
-                <label className="form-label">Nível mínimo</label>
+            {/* GRID MIN MAX */}
+            <div className="saas-grid">
+              <div className="saas-form-group">
+                <label>Nível mínimo</label>
                 <input
                   type="number"
-                  className="form-control"
+                  placeholder="0"
                   value={formData.minLevel}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      minLevel: e.target.value,
+                      minLevel: e.target.value
                     })
                   }
                 />
               </div>
-
-              <div className="form-group">
-                <label className="form-label">Nível máximo</label>
+              <div className="saas-form-group">
+                <label>Nível máximo</label>
                 <input
                   type="number"
-                  className="form-control"
+                  placeholder="100"
                   value={formData.maxLevel}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      maxLevel: e.target.value,
+                      maxLevel: e.target.value
                     })
                   }
                 />
               </div>
             </div>
-            </div>
+          </div>
 
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowModal(false)}>
-                Cancelar
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={handleCreate}
-                disabled={!formData.name || !formData.sensorCode}
-              >
-                <FaSave /> Criar
-              </button>
-            </div>
+          {/* FOOTER */}
+          <div className="saas-modal-footer">
+            <button
+              className="saas-btn-secondary"
+              onClick={handleClose}
+            >
+              Cancelar
+            </button>
+            <button
+              className="saas-btn-primary"
+              onClick={handleCreate}
+              disabled={!formData.name || !formData.sensorCode}
+            >
+              <FaSave />
+              Criar Silo
+            </button>
           </div>
         </div>
+      </div>
       )}
     </div>
   );
