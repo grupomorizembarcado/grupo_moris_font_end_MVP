@@ -131,7 +131,7 @@ const SiloDetails = () => {
             <button onClick={() => setShowEditModal(true)} className="btn btn-primary">
               <FaEdit /> Editar
             </button>
-            <button onClick={() => setShowDeleteModal(true)} className="btn btn-error">
+            <button onClick={() => setShowDeleteModal(true)} className="btn saas-btn-outlined-red">
               <FaTrash /> Deletar
             </button>
           </div>
@@ -297,14 +297,13 @@ const SiloDetails = () => {
           {/* FOOTER */}
           <div className="saas-modal-footer">
             <button
-              className="saas-btn-secondary"
+              className="saas-btn-primary"
               onClick={() => setShowDeleteModal(false)}
             >
               Cancelar
             </button>
             <button
-              className="saas-btn-primary"
-              style={{background:"#dc2626"}}
+              className="saas-btn-outlined-red"
               onClick={handleDeleteConfirm}
             >
               <FaTrash />

@@ -110,7 +110,7 @@ const SiloFormModal = ({
         <div className="saas-modal-footer">
 
           <button
-            className="saas-btn-secondary"
+            className="saas-btn-outlined-red"
             onClick={onClose}
           >
             Cancelar

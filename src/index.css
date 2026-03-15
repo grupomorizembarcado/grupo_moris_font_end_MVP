@@ -747,6 +747,24 @@ body {
   background: #f5f5f5;
 }
 
+/* Outlined Red Button */
+.saas-btn-outlined-red {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1.5px solid #ef4444;
+  background: white;
+  color: #ef4444;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.saas-btn-outlined-red:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
 /* ===== LEGACY MODAL (para compatibilidade) ===== */
 .modal-overlay {
   color-scheme: saas-modal-overlay;
