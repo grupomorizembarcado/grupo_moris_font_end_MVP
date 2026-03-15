@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Button from "../components/ui/Button";
 import { FaSyncAlt } from "react-icons/fa";
-// import apiService from "../services/api";
 import "../styles/Notificacoes.css";
 
-const BASE_URL = "https://api-granjatech.onrender.com"; 
+const BASE_URL = "https://api-granjatech.onrender.com";
+const TEMPERATURE_HUMIDITY_URL = `${BASE_URL}/api/environmentalMetrics`;
 
 function formatarData(iso) {
   if (!iso) return "-";
@@ -14,22 +14,26 @@ function formatarData(iso) {
 }
 
 function normalizeStatus(s) {
-  return String(s || "").trim().toLowerCase(); 
+  return String(s || "").trim().toLowerCase();
 }
 
-function makeRow({ shed, tipo, valorMedio, status, timestamp }) {
+function makeRow({ shed, tipo, valorMedio, status, timestamp, descricaoCustomizada }) {
   const nivel = normalizeStatus(status) === "alerta" ? "critico" : "normal";
 
   const unidade = tipo === "Temperatura" ? "°C" : "%";
-  const descricao = `${tipo} média: ${valorMedio ?? "-"}${unidade}`;
+  const descricao = descricaoCustomizada || `${tipo} média: ${valorMedio ?? "-"}${unidade}`;
 
   return {
-    id: `${shed.id || shed._id || shed.shed_id}-${tipo}-${timestamp}`,
-    tipo,
-    galpao: shed.name || shed.shed_name || `Galpão ${shed.id ?? shed.shed_id ?? ""}`,
+    id: `${shed.id || shed._id || shed.shed_id || shed.silo_id || shed.unit_id}-${tipo}-${timestamp}`, tipo,
+    galpao:
+      shed.name ||
+      shed.shed_name ||
+      shed.silo_name ||
+      shed.unit_name ||
+      `Unidade ${shed.id ?? shed.shed_id ?? shed.silo_id ?? shed.unit_id ?? ""}`,
     descricao,
     data: timestamp,
-    nivel,                 
+    nivel,
     status: status || "-",
     reconhecido: false,
   };
@@ -38,95 +42,111 @@ function makeRow({ shed, tipo, valorMedio, status, timestamp }) {
 const Notificacoes = () => {
   const [loading, setLoading] = useState(false);
   const [historico, setHistorico] = useState([]);
-  const [overviews, setOverviews] = useState([]); 
+  const [overviews, setOverviews] = useState([]);
 
   const fetchDados = async () => {
     try {
       setLoading(true);
 
       // 1) Lista de silos
-      const shedsResp = await fetch(`${BASE_URL}/api/silos`);
-      const sheds = await shedsResp.json();
-      console.log('Response from API:', shedsResp);
-      console.log('Sheds data:', sheds);
+      const shedsResp = await fetch(`${BASE_URL}/api/silo/reading`);
+      const shedsData = await shedsResp.json();
+      const sheds = Array.isArray(shedsData) ? shedsData : [shedsData]; console.log('Response from API:', shedsResp);
+      // console.log('Sheds data:', sheds);
 
-      // 2) Overview de cada silo (em paralelo)
-      const overviewPromises = sheds.map(async (shed) => {
-        const shedId = shed.silo_id ?? shed._id ?? shed.shed_id;
-        if (!shedId) return null;
+      const envResp = await fetch(`${BASE_URL}/api/environmentalMetrics`);
+      const envData = await envResp.json();
+      const units = Array.isArray(envData) ? envData : [envData];
 
-        const ovResp = await fetch(`${BASE_URL}/api/environment/latest`);
-        const overview = await ovResp.json(); // Usar .json() para obter a resposta
-        return { shed, overview };
-      });
-
-      const results = (await Promise.all(overviewPromises)).filter(Boolean);
-      setOverviews(results);
-
+      // setOverviews(envData)
+      setOverviews(units);
       // 3) Gerar linhas do histórico com base em estatísticas
       const novasLinhas = [];
 
-      for (const item of results) {
-        const { shed, overview } = item;
-        const stats = overview?.data || null; // A resposta do ambiente tem os dados em "data"
-        if (!stats) continue;
+      for (const unit of units) {
+        const readings = Array.isArray(unit?.last_20_readings) ? unit.last_20_readings : [];
 
-        const timestamp =
-          overview?.timestamp ||
-          overview?.updatedAt ||
-          overview?.createdAt ||
-          new Date().toISOString();
+        readings.forEach((reading) => {
+          const timestamp = reading?.timestamp || new Date().toISOString();
 
-        // Temperatura
-        if (stats.temperature != null) {
-          novasLinhas.push(
-            makeRow({
-              shed,
-              tipo: "Temperatura",
-              valorMedio: Number(stats.temperature),
-              status: stats.status_temperatura,
-              timestamp,
-            })
-          );
-        }
+          if (reading?.temperature != null) {
+            const temperatureValue = Number(reading.temperature);
 
-        // Umidade
-        if (stats.humidity != null) {
-          novasLinhas.push(
-            makeRow({
-              shed,
-              tipo: "Umidade",
-              valorMedio: Number(stats.humidity),
-              status: stats.status_umidade,
-              timestamp,
-            })
-          );
-        }
-      }
-
-      // 4) Verificação dos silos para quantidade de ração (percentual < 40%)
-      sheds.forEach((silo) => {
-        const { silo_name, last_20_readings } = silo;
-
-        // Verifica os alertas de quantidade de ração (percentage < 40%)
-        if (last_20_readings && last_20_readings.length > 0) {
-          last_20_readings.forEach((reading) => {
-            if (reading.percentage < 40) {
-              novasLinhas.push(
-                makeRow({
-                  shed: { name: silo_name },
-                  tipo: "Ração",
-                  valorMedio: Number(reading.level_value),
-                  status: "alerta",
-                  timestamp: reading.timestamp,
-                })
-              );
+            // faixa ideal
+            if (temperatureValue >= 25 && temperatureValue <= 27) {
+              return;
             }
-          });
+
+            const statusTemperatura = "alerta";
+
+            let descricaoTemp = `Temperatura fora do ideal: ${temperatureValue}°C`;
+
+            if (temperatureValue > 27) {
+              descricaoTemp = `Temperatura alta: ${temperatureValue}°C`;
+            }
+
+            if (temperatureValue < 25) {
+              descricaoTemp = `Temperatura baixa: ${temperatureValue}°C`;
+            }
+
+            novasLinhas.push(
+              makeRow({
+                shed: unit,
+                tipo: "Temperatura",
+                valorMedio: temperatureValue,
+                status: statusTemperatura,
+                timestamp,
+                descricaoCustomizada: descricaoTemp,
+              })
+            );
+          }
+
+          // Umidade: alerta >70 ou <50
+          if (reading?.humidity != null) {
+            const humidityValue = Number(reading.humidity);
+            const statusUmidade =
+              humidityValue > 70 || humidityValue < 50 ? "alerta" : "normal";
+
+            let descricaoUmidade = `Umidade média: ${humidityValue}%`;
+
+            if (humidityValue > 70) {
+              descricaoUmidade = `Alta umidade: ${humidityValue}%`;
+            } else if (humidityValue < 50) {
+              descricaoUmidade = `Baixa umidade: ${humidityValue}%`;
+            }
+
+            novasLinhas.push(
+              makeRow({
+                shed: unit,
+                tipo: "Umidade",
+                valorMedio: humidityValue,
+                status: statusUmidade,
+                timestamp,
+                descricaoCustomizada: descricaoUmidade,
+              })
+            );
+          }
+        });
+      }
+      sheds.forEach((reading) => {
+        const percentage = Number(reading?.level_percentage);
+
+        if (percentage < 40) {
+          novasLinhas.push(
+            makeRow({
+              shed: {
+                silo_id: reading?.siloId,
+                silo_name: `Silo ${reading?.siloId ?? ""}`,
+              },
+              tipo: "Ração",
+              valorMedio: percentage,
+              status: "alerta",
+              timestamp: reading?.timestamp,
+              descricaoCustomizada: `Nível de ração baixo: ${percentage}%`,
+            })
+          );
         }
       });
-
-      // 5) Mescla com o histórico existente, sem duplicar
       setHistorico((prev) => {
         const ids = new Set(prev.map((x) => x.id));
         const add = novasLinhas.filter((x) => !ids.has(x.id));
@@ -135,7 +155,6 @@ const Notificacoes = () => {
         combinado.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
         return combinado;
       });
-
     } catch (e) {
       console.error("Erro ao buscar dados:", e);
     } finally {
@@ -150,37 +169,44 @@ const Notificacoes = () => {
 
   // Card crítico: primeiro galpão onde status_temperatura ou status_umidade == "alerta"
   const alertaCritico = useMemo(() => {
-    for (const item of overviews) {
-      const { shed, overview } = item;
-      const stats = overview?.data || null;
-      if (!stats) continue;
+    for (const unit of overviews) {
+      const readings = Array.isArray(unit?.last_20_readings) ? unit.last_20_readings : [];
 
-      const stTemp = normalizeStatus(stats.status_temperatura);
-      const stHum = normalizeStatus(stats.status_umidade);
+      for (const reading of readings) {
+        const temperatureValue = Number(reading?.temperature);
+        const humidityValue = Number(reading?.humidity);
 
-      const motivos = [];
-      if (stTemp === "alerta") motivos.push(`Temperatura em alerta (média: ${stats.temperature}°C)`);
-      if (stHum === "alerta") motivos.push(`Umidade em alerta (média: ${stats.humidity}%)`);
+        const tempAlert = temperatureValue > 25 || temperatureValue < 20;
+        const humAlert = humidityValue > 70 || humidityValue < 50;
 
-      if (motivos.length > 0) {
-        const timestamp =
-          overview?.timestamp ||
-          overview?.updatedAt ||
-          overview?.createdAt ||
-          new Date().toISOString();
+        const motivos = [];
 
-        return {
-          id: `CRIT-${shed.silo_id || shed._id || shed.shed_id}-${timestamp}`,
-          galpao: shed.name || shed.shed_name || `Galpão ${shed.silo_id ?? shed.shed_id ?? ""}`,
-          descricao: motivos.join(" | "),
-          data: timestamp,
-        };
+        if (tempAlert) {
+          motivos.push(`Temperatura em alerta (${temperatureValue}°C)`);
+        }
+
+        if (humAlert) {
+          if (humidityValue > 70) {
+            motivos.push(`Alta umidade (${humidityValue}%)`);
+          } else if (humidityValue < 50) {
+            motivos.push(`Baixa umidade (${humidityValue}%)`);
+          }
+        }
+
+        if (motivos.length > 0) {
+          return {
+            id: `CRIT-${unit.unit_id}-${reading.timestamp}`,
+            galpao: unit.unit_name || `Unidade ${unit.unit_id}`,
+            descricao: motivos.join(" | "),
+            data: reading.timestamp,
+          };
+        }
       }
     }
+
     return null;
   }, [overviews]);
 
-  // Reconhecer alerta
   const reconhecerAlerta = () => {
     if (!alertaCritico) return;
 
@@ -213,7 +239,7 @@ const Notificacoes = () => {
         </div>
 
         {/* Card crítico (aparece só se status_* == "alerta") */}
-        {alertaCritico && (
+        {/* {alertaCritico && (
           <div className="alerta-critico-card">
             <div className="alerta-critico-left">
               <h2 className="titulo-critico">ALERTA CRÍTICO</h2>
@@ -233,7 +259,7 @@ const Notificacoes = () => {
               Reconhecer alerta
             </Button>
           </div>
-        )}
+        )} */}
 
         {/* Histórico permanente */}
         <div className="card-body">
@@ -283,10 +309,6 @@ const Notificacoes = () => {
               </tbody>
             </table>
           </div>
-
-          {/* <p className="text-gray-600 text-sm" style={{ marginTop: 10 }}>
-            * Criticidade vem do backend via <code>estatisticas.status_temperatura</code> e <code>estatisticas.status_umidade</code>.
-          </p> */}
         </div>
       </div>
     </div>
