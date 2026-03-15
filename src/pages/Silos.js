@@ -4,6 +4,7 @@ import { FaBoxes, FaPlus, FaSave, FaTimes,
 import { useNavigate } from "react-router-dom";
 import LoadingState from "../components/silos/LoadingState";
 import ErrorState from "../components/silos/ErrorState";
+import SiloFormModal from "../components/silos/SiloFormModal";
 import apiService from "../services/api";
 
 const Silos = () => {
@@ -237,111 +238,17 @@ const Silos = () => {
      
       {/* Modal Criar */}
       {showModal && (
-      <div className="saas-modal-overlay">
-        <div className="saas-modal">
-
-          {/* HEADER */}
-          <div className="saas-modal-header">
-            <div className="saas-modal-title">
-              <div className="saas-modal-icon">
-                <FaPlus />
-              </div>
-              <div>
-                <h2>Novo Silo</h2>
-                <span>Adicionar novo sensor ao sistema</span>
-              </div>
-            </div>
-            <button
-              className="saas-modal-close"
-              onClick={handleClose}
-            >
-              <FaTimes />
-            </button>
-          </div>
-
-          {/* BODY */}
-          <div className="saas-modal-body">
-            <div className="saas-form-group">
-              <label>Nome do silo *</label>
-              <input
-                type="text"
-                placeholder="Ex: Silo Principal"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    name: e.target.value
-                  })
-                }
-              />
-            </div>
-            <div className="saas-form-group">
-              <label>Código do Sensor *</label>
-              <input
-                type="text"
-                placeholder="Ex: SENSOR-001"
-                value={formData.sensorCode}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    sensorCode: e.target.value
-                  })
-                }
-              />
-            </div>
-
-            {/* GRID MIN MAX */}
-            <div className="saas-grid">
-              <div className="saas-form-group">
-                <label>Nível mínimo</label>
-                <input
-                  type="number"
-                  placeholder="0"
-                  value={formData.minLevel}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      minLevel: e.target.value
-                    })
-                  }
-                />
-              </div>
-              <div className="saas-form-group">
-                <label>Nível máximo</label>
-                <input
-                  type="number"
-                  placeholder="100"
-                  value={formData.maxLevel}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      maxLevel: e.target.value
-                    })
-                  }
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* FOOTER */}
-          <div className="saas-modal-footer">
-            <button
-              className="saas-btn-secondary"
-              onClick={handleClose}
-            >
-              Cancelar
-            </button>
-            <button
-              className="saas-btn-primary"
-              onClick={handleCreate}
-              disabled={!formData.name || !formData.sensorCode}
-            >
-              <FaSave />
-              Criar Silo
-            </button>
-          </div>
-        </div>
-      </div>
+      <SiloFormModal
+        isOpen={showModal}
+        onClose={handleClose}
+        onSubmit={handleCreate}
+        title="Novo Silo"
+        subtitle="Adicionar novo sensor ao sistema"
+        icon={<FaPlus />}
+        submitText="Criar Silo"
+        formData={formData}
+        setFormData={setFormData}
+      />
       )}
     </div>
   );
