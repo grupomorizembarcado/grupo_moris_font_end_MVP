@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { FaArrowLeft, FaEdit, FaTimes, FaTrash,  FaChartLine} from "react-icons/fa";
 import { useParams, useNavigate } from "react-router-dom";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer} from "recharts";
@@ -19,13 +19,9 @@ const SiloDetails = () => {
     sensorCode: "",
     minLevel: "",
     maxLevel: "",
-  });
+  });   
 
-   useEffect(() => {
-    loadSiloDetails();
-  },[id]);
-
-  const loadSiloDetails = async () => {
+  const loadSiloDetails = useCallback(async () => {
     setLoading(true);
     try {
       const silos = await apiService.getSilos();
@@ -46,7 +42,11 @@ const SiloDetails = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    loadSiloDetails();
+  }, [loadSiloDetails]);
 
   const getBarColor = (percentage) => {
     if (percentage <= 20) return "var(--error)";

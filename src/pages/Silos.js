@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
-import { FaBoxes, FaPlus, FaSave, FaTimes,
-  FaExclamationTriangle, FaExclamationCircle, FaCheckCircle } from "react-icons/fa";
+import { useState, useEffect, useCallback } from "react";
+import { FaBoxes, FaPlus, FaExclamationTriangle, FaExclamationCircle, FaCheckCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import LoadingState from "../components/silos/LoadingState";
 import ErrorState from "../components/silos/ErrorState";
@@ -21,9 +20,9 @@ const Silos = () => {
     maxLevel: ""
   });
 
-  const loadSilos = async () => {
+  const loadSilos = useCallback(async () => {
     setLoading(true);
-    error && setError(null); // Limpa erros anteriores
+    error && setError(null);
     try {
       const data = await apiService.getSilos();
       setSilos(data);
@@ -31,13 +30,13 @@ const Silos = () => {
       setError("Não foi possível carregar os silos. Tente novamente mais tarde.");
       console.error("Erro ao carregar silos:", error);
     } finally {
-      setLoading(false);  
+      setLoading(false);
     }
-  };
+  }, [error]);
 
-  useEffect(() => {
-    loadSilos();
-  }, []);
+useEffect(() => {
+  loadSilos();
+}, [loadSilos]);
 
   const handleCreate = async () => {
     try {
