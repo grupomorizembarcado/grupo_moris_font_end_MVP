@@ -12,14 +12,14 @@ function Monitor() {
     nivelRacao: 18,
   };
 
+  const { nivelRacao } = dadosMock;
+
   useEffect(() => {
-    // Simulação de alerta
-    if (dadosMock.nivelRacao < 20) {
+    if (nivelRacao < 25) {
       setState("CRITICO");
     }
-    // document.documentElement.requestFullscreen();
-  }, []);
-
+  }, [nivelRacao]);
+  
   if (state === "CRITICO") {
     return (
       <div className="monitor-critico">

@@ -172,11 +172,11 @@ const SiloDetails = () => {
                   <h4>Limites Configurados</h4>
                   <div className="limits-grid">
                     <div className="limit-box">
-                      <span>Mínimo: </span>
+                      <span>Leitura mínima do sensor: </span>
                       <strong>{silo.min_level}</strong>
                     </div>
                     <div className="limit-box">
-                      <span>Máximo: </span>
+                      <span>Leitura máxima do sensor: </span>
                       <strong>{silo.max_level}</strong>
                     </div>
                   </div>

@@ -1,22 +1,28 @@
-import { mockBarns, mockDashboard } from './mockData';
+import axios from "axios";
+import { mockBarns, mockDashboard } from "./mockData";
 
-const SILO_API_BASE_URL = 'https://api-granjatech.onrender.com/api';
+const api = axios.create({
+  baseURL: process.env.REACT_APP_API_BASE_URL || "https://api-granjatech.onrender.com/api",
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
 class ApiService {
   constructor() {
-    this.simulateDelay = 500; // ms
+    this.simulateDelay = 500;
   }
 
   // ============================
   // MÉTODO GENÉRICO (MOCK)
   // ============================
-  async request(endpoint, options = {}) {
-    await new Promise(resolve => setTimeout(resolve, this.simulateDelay));
+  async request(endpoint) {
+    await new Promise((resolve) => setTimeout(resolve, this.simulateDelay));
 
     switch (endpoint) {
-      case '/dashboard':
+      case "/dashboard":
         return this.getDashboardData();
-      case '/galpoes':
+      case "/galpoes":
         return this.getGalpoes();
       default:
         throw new Error(`Endpoint ${endpoint} não encontrado`);
@@ -30,7 +36,7 @@ class ApiService {
     return {
       success: true,
       data: mockDashboard,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 
@@ -41,15 +47,15 @@ class ApiService {
     return {
       success: true,
       data: mockBarns,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 
   async createGalpao(data) {
     const newGalpao = {
-      barn_id: Math.max(...mockBarns.map(b => b.barn_id)) + 1,
+      barn_id: Math.max(...mockBarns.map((b) => b.barn_id)) + 1,
       ...data,
-      consulted_at: new Date().toISOString()
+      consulted_at: new Date().toISOString(),
     };
 
     mockBarns.push(newGalpao);
@@ -57,107 +63,91 @@ class ApiService {
     return {
       success: true,
       data: newGalpao,
-      message: 'Galpão criado com sucesso!'
+      message: "Galpão criado com sucesso!",
     };
   }
 
   async updateGalpao(id, data) {
-    const index = mockBarns.findIndex(b => b.barn_id === id);
+    const index = mockBarns.findIndex((b) => b.barn_id === id);
 
     if (index === -1) {
-      throw new Error('Galpão não encontrado');
+      throw new Error("Galpão não encontrado");
     }
 
     mockBarns[index] = {
       ...mockBarns[index],
       ...data,
-      consulted_at: new Date().toISOString()
+      consulted_at: new Date().toISOString(),
     };
 
     return {
       success: true,
       data: mockBarns[index],
-      message: 'Galpão atualizado com sucesso!'
+      message: "Galpão atualizado com sucesso!",
     };
   }
 
   async deleteGalpao(id) {
-    const index = mockBarns.findIndex(b => b.barn_id === id);
+    const index = mockBarns.findIndex((b) => b.barn_id === id);
 
     if (index === -1) {
-      throw new Error('Galpão não encontrado');
+      throw new Error("Galpão não encontrado");
     }
 
     mockBarns.splice(index, 1);
 
     return {
       success: true,
-      message: 'Galpão deletado com sucesso!'
+      message: "Galpão deletado com sucesso!",
     };
   }
 
   // ======================================
-  // ================= SILOS (API REAL)
+  // SILOS (API REAL)
   // ======================================
 
-async getSilos() {
-    const response = await fetch(`${SILO_API_BASE_URL}/silos`);
-
-    console.log("Status:", response.status);
-
-    const data = await response.json();
-    console.log("Resposta da API:", data);
-
-    if (!response.ok) {
-      throw new Error(`Erro ${response.status}`);
+  async getSilos() {
+    try {
+      const response = await api.get("/silos");
+      console.log("Resposta da API:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao buscar silos:", error);
+      throw error;
     }
-
-    return data;
   }
 
   async createSilo(data) {
-    const response = await fetch(`${SILO_API_BASE_URL}/silo`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    });
-
-    if (!response.ok) {
-      throw new Error('Erro ao criar silo');
+    try {
+      const response = await api.post("/silo", data);
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao criar silo:", error);
+      throw error;
     }
-
-    return await response.json();
   }
 
   async updateSilo(sensorCode, data) {
-    const response = await fetch(`${SILO_API_BASE_URL}/silo/${sensorCode}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    });
-
-    if (!response.ok) {
-      throw new Error('Erro ao atualizar silo');
+    try {
+      const response = await api.put(`/silo/${sensorCode}`, data);
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao atualizar silo:", error);
+      throw error;
     }
-
-    return await response.json();
   }
 
   async deleteSilo(sensorCode) {
-  const response = await fetch(`${SILO_API_BASE_URL}/silo/${sensorCode}`, {
-    method: 'DELETE'
-  });
-
-  if (!response.ok) {
-    throw new Error('Erro ao deletar silo');
-  }
-
-  return await response.json();
+    try {
+      const response = await api.delete(`/silo/${sensorCode}`);
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao deletar silo:", error);
+      throw error;
+    }
   }
 }
 
-export default new ApiService();
+const apiService = new ApiService();
+
+export default apiService;
