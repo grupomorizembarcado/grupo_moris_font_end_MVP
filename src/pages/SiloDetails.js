@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import {
   FaArrowLeft,
   FaEdit,
+  FaTimes,
+  FaSave,
   FaTrash,
   FaChartLine,
 } from "react-icons/fa";
@@ -25,6 +27,7 @@ const SiloDetails = () => {
   const [silo, setSilo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showEdit, setShowEdit] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [formData, setFormData] = useState({ name: "", sensorCode: "" });
   const [showEditModal, setShowEditModal] = useState(false);
   const [editFormData, setEditFormData] = useState({
@@ -94,27 +97,30 @@ const SiloDetails = () => {
       })) || [];
 
   const handleEditSave = async () => {
-    try {
-      await apiService.updateSilo(silo.silo_id, editFormData);
-      await loadSiloDetails();
-      setShowEditModal(false);
-    } catch (error) {
-      console.error("Erro ao atualizar silo:", error);
-      alert("Erro ao atualizar silo");
-    }
-  };
+  try {
+    await apiService.updateSilo(silo.sensor_code, editFormData);
 
-  const handleDelete = async () => {
-    if (window.confirm(`Tem certeza que deseja deletar o silo "${silo?.silo_name}"?`)) {
-      try {
-        await apiService.deleteSilo(silo.silo_id);
-        navigate(-1);
-      } catch (error) {
-        console.error("Erro ao deletar silo:", error);
-        alert("Erro ao deletar silo");
-      }
-    }
-  };
+    await loadSiloDetails();
+    setShowEditModal(false);
+
+  } catch (error) {
+    console.error("Erro ao atualizar silo:", error);
+    alert("Erro ao atualizar silo");
+  }
+};
+
+  const handleDeleteConfirm = async () => {
+  try {
+    await apiService.deleteSilo(silo.sensor_code);
+
+    setShowDeleteModal(false);
+    navigate("/silos");
+
+  } catch (error) {
+    console.error("Erro ao deletar silo:", error);
+    alert("Erro ao deletar silo");
+  }
+};
 
   if (loading) {
     return (
@@ -151,6 +157,8 @@ const SiloDetails = () => {
 
   return (
     <div className="content">
+
+      {/* Header */}
       <div className="card mb-6">
         <div className="flex items-center justify-between">
           <button onClick={() => navigate(-1)}
@@ -164,7 +172,7 @@ const SiloDetails = () => {
             <button onClick={() => setShowEditModal(true)} className="btn btn-primary">
               <FaEdit /> Editar
             </button>
-            <button onClick={handleDelete} className="btn btn-error">
+            <button onClick={() => setShowDeleteModal(true)} className="btn btn-error">
               <FaTrash /> Deletar
             </button>
           </div>
@@ -186,15 +194,15 @@ const SiloDetails = () => {
 
                 {latestReading && (
                   <div className="space-y-4">
-                    <div className="flex justify-between">
-                      <span>Percentual:</span>
+                    <div className="mb-6">
+                      <span>Percentual: </span>
                       <span className="text-3xl font-bold text-primary">
                         {latestReading.percentage.toFixed(2)}%
                       </span>
                     </div>
 
-                    <div className="flex justify-between">
-                      <span>Última Leitura:</span>
+                    <div className="mb-6">
+                      <span>Última Leitura: </span>
                       <span>
                         {new Date(latestReading.timestamp).toLocaleString("pt-BR")}
                       </span>
@@ -207,14 +215,14 @@ const SiloDetails = () => {
                     Limites Configurados
                   </h3>
                   <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Mínimo:</span>
+                    <div className="mb-6">
+                      <span className="text-slate-600">Mínimo: </span>
                       <span className="font-medium text-slate-800">
                         {silo.min_level}
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Máximo:</span>
+                    <div className="mb-6">
+                      <span className="text-slate-600">Máximo: </span>
                       <span className="font-medium text-slate-800">
                         {silo.max_level}
                       </span>
@@ -257,6 +265,157 @@ const SiloDetails = () => {
           )}
         </div>
       </div>
+
+    {/* EDIT MODAL */}
+    {showEditModal && (
+      <div className="modal-overlay">
+        <div className="modal">
+          <div className="modal-header">
+            <h2 className="card-title">
+              <FaEdit /> Editar Silo
+            </h2>
+
+            <button
+              className="btn btn-secondary"
+              onClick={() => setShowEditModal(false)}
+            >
+              <FaTimes />
+            </button>
+          </div>
+
+          <div className="modal-body">
+            <div className="form-group">
+              <label className="form-label">Nome *</label>
+              <input
+                className="form-control"
+                value={editFormData.name}
+                onChange={(e) =>
+                  setEditFormData({
+                    ...editFormData,
+                    name: e.target.value,
+                  })
+                }
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Código do Sensor *</label>
+              <input
+                className="form-control"
+                value={editFormData.sensorCode}
+                onChange={(e) =>
+                  setEditFormData({
+                    ...editFormData,
+                    sensorCode: e.target.value,
+                  })
+                }
+              />
+            </div>
+
+            {/* MIN / MAX LADO A LADO */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="form-group">
+                <label className="form-label">Nível mínimo</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={editFormData.minLevel}
+                  onChange={(e) =>
+                    setEditFormData({
+                      ...editFormData,
+                      minLevel: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Nível máximo</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={editFormData.maxLevel}
+                  onChange={(e) =>
+                    setEditFormData({
+                      ...editFormData,
+                      maxLevel: e.target.value,
+                    })
+                  }
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="modal-footer">
+            <button
+              className="btn btn-secondary"
+              onClick={() => setShowEditModal(false)}
+            >
+              Cancelar
+            </button>
+
+            <button
+              className="btn btn-primary"
+              onClick={handleEditSave}
+              disabled={!editFormData.name || !editFormData.sensorCode}
+            >
+              <FaSave /> Salvar
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+
+    {/* DELETE MODAL */}
+    {showDeleteModal && (
+      <div className="modal-overlay">
+        <div className="modal">
+          <div className="modal-header">
+            <h2 className="card-title">
+              <FaTrash /> Deletar Silo
+            </h2>
+
+            <button
+              className="btn btn-secondary"
+              onClick={() => setShowDeleteModal(false)}
+            >
+              <FaTimes />
+            </button>
+          </div>
+
+          <div className="modal-body text-center">
+            <p className="text-lg">
+              Tem certeza que deseja deletar o silo:
+            </p>
+
+            <p className="font-bold text-xl mt-2">
+              {silo.silo_name}
+            </p>
+
+            <p className="text-sm text-gray-500 mt-4">
+              Esta ação não pode ser desfeita.
+            </p>
+          </div>
+
+          <div className="modal-footer">
+            <button
+              className="btn btn-secondary"
+              onClick={() => setShowDeleteModal(false)}
+            >
+              Cancelar
+            </button>
+
+            <button
+              className="btn btn-error"
+              onClick={handleDeleteConfirm}
+            >
+              <FaTrash /> Deletar
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     </div>
   );
 };

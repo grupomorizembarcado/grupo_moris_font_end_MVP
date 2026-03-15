@@ -100,10 +100,7 @@ class ApiService {
   // ================= SILOS (API REAL)
   // ======================================
 
-
-  
-
-  async getSilos() {
+async getSilos() {
     const response = await fetch(`${SILO_API_BASE_URL}/silos`);
 
     console.log("Status:", response.status);
@@ -117,7 +114,6 @@ class ApiService {
 
     return data;
   }
-
 
   async createSilo(data) {
     const response = await fetch(`${SILO_API_BASE_URL}/silo`, {
@@ -135,8 +131,8 @@ class ApiService {
     return await response.json();
   }
 
-  async updateSilo(id, data) {
-    const response = await fetch(`${SILO_API_BASE_URL}/silo/${id}`, {
+  async updateSilo(sensorCode, data) {
+    const response = await fetch(`${SILO_API_BASE_URL}/silo/${sensorCode}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -149,6 +145,18 @@ class ApiService {
     }
 
     return await response.json();
+  }
+
+  async deleteSilo(sensorCode) {
+  const response = await fetch(`${SILO_API_BASE_URL}/silo/${sensorCode}`, {
+    method: 'DELETE'
+  });
+
+  if (!response.ok) {
+    throw new Error('Erro ao deletar silo');
+  }
+
+  return await response.json();
   }
 }
 

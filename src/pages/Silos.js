@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { FaBoxes, FaPlus, FaSave, FaTimes,
   FaExclamationTriangle, FaExclamationCircle, FaCheckCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import LoadingState from "../components/silos/LoadingState";
+import ErrorState from "../components/silos/ErrorState";
 import apiService from "../services/api";
 
 const Silos = () => {
@@ -20,6 +22,7 @@ const Silos = () => {
 
   const loadSilos = async () => {
     setLoading(true);
+    error && setError(null); // Limpa erros anteriores
     try {
       const data = await apiService.getSilos();
       setSilos(data);
@@ -57,58 +60,41 @@ const Silos = () => {
   };
 
   if (loading) {
-    return (
-      <div className="content">
-        <div className="card p-8 text-center">
-          Carregando silos...
-        </div>
-      </div>
-    );
+    return <LoadingState />;
   }
 
   if (error) {
     return (
-      <div className="content">
-        <div className="card mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-error mb-2">Erro ao carregar dados</h3>
-              <p className="text-gray-600">{error}</p>
-            </div>
-            <button 
-              className="btn btn-primary mt-4"
-              onClick={loadSilos}
-            >
-              Tentar novamente
-            </button>
-          </div>
-        </div>
-      </div>
-     );
-    }
-
-  if (silos.length === 0) {
-    return (
-      <div className="content">
-        <div className="card mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">Nenhum silo cadastrado</h3>
-              <p className="text-gray-500 mb-6">
-                Comece cadastrando seu primeiro silo para monitorar os níveis de ração.
-              </p>
-              <button
-                className="btn btn-primary"
-                onClick={() => setShowModal(true)}
-              >
-                <FaPlus /> Cadastrar Primeiro Silo
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ErrorState
+        error={error}
+        onRetry={loadSilos}
+      />
     );
   }
+
+  // if (silos.length === 0) {
+  //   return (
+  //     <div className="content">
+  //       <div className="card mb-6">
+  //         <div className="flex items-center justify-between">
+  //           <div>
+  //             <h3 className="text-lg font-semibold text-gray-700 mb-2">Nenhum silo cadastrado</h3>
+  //             <p className="text-gray-500 mb-6">
+  //               Comece cadastrando seu primeiro silo para monitorar os níveis de ração.
+  //             </p>
+  //             <button
+  //               className="btn btn-primary"
+  //               onClick={() => setShowModal(true)}
+  //             >
+  //               <FaPlus /> Cadastrar Primeiro Silo
+  //             </button>
+  //           </div>
+  //         </div>
+  //       </div>
+  //     </div>
+      
+  //   );
+  // }
 
   return (
     <div className="content">
@@ -227,6 +213,23 @@ const Silos = () => {
           })}
       </div>
 
+
+      {/* Empty State */}
+        {silos.length === 0 && (
+          <div className="bg-white rounded-xl shadow-md p-12 text-center">
+            <FaBoxes size={48} className="mx-auto text-slate-400 mb-4" />
+            <p className="text-slate-600 text-lg mb-4">
+              Nenhum silo cadastrado
+            </p>
+            <button
+              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors font-semibold"
+              onClick={() => setShowModal(true)}
+            >
+              <FaPlus /> Criar Primeiro Silo
+            </button>
+          </div>
+        )}
+     
       {/* Modal Criar */}
       {showModal && (
         <div className="modal-overlay">
@@ -270,25 +273,36 @@ const Silos = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
+              <div className="form-group">
+                <label className="form-label">Nível mínimo</label>
                 <input
                   type="number"
                   className="form-control"
-                  placeholder="Min"
                   value={formData.minLevel}
                   onChange={(e) =>
-                    setFormData({ ...formData, minLevel: e.target.value })
-                  }
-                />
-                <input
-                  type="number"
-                  className="form-control"
-                  placeholder="Max"
-                  value={formData.maxLevel}
-                  onChange={(e) =>
-                    setFormData({ ...formData, maxLevel: e.target.value })
+                    setFormData({
+                      ...formData,
+                      minLevel: e.target.value,
+                    })
                   }
                 />
               </div>
+
+              <div className="form-group">
+                <label className="form-label">Nível máximo</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={formData.maxLevel}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      maxLevel: e.target.value,
+                    })
+                  }
+                />
+              </div>
+            </div>
             </div>
 
             <div className="modal-footer">
