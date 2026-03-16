@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Button from "../components/ui/Button";
 import { FaSyncAlt } from "react-icons/fa";
 import "../styles/Notificacoes.css";
@@ -165,46 +165,6 @@ const Notificacoes = () => {
     fetchDados();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Card crítico: primeiro galpão onde status_temperatura ou status_umidade == "alerta"
-  const alertaCritico = useMemo(() => {
-    for (const unit of overviews) {
-      const readings = Array.isArray(unit?.last_20_readings) ? unit.last_20_readings : [];
-
-      for (const reading of readings) {
-        const temperatureValue = Number(reading?.temperature);
-        const humidityValue = Number(reading?.humidity);
-
-        const tempAlert = temperatureValue > 25 || temperatureValue < 20;
-        const humAlert = humidityValue > 70 || humidityValue < 50;
-
-        const motivos = [];
-
-        if (tempAlert) {
-          motivos.push(`Temperatura em alerta (${temperatureValue}°C)`);
-        }
-
-        if (humAlert) {
-          if (humidityValue > 70) {
-            motivos.push(`Alta umidade (${humidityValue}%)`);
-          } else if (humidityValue < 50) {
-            motivos.push(`Baixa umidade (${humidityValue}%)`);
-          }
-        }
-
-        if (motivos.length > 0) {
-          return {
-            id: `CRIT-${unit.unit_id}-${reading.timestamp}`,
-            galpao: unit.unit_name || `Unidade ${unit.unit_id}`,
-            descricao: motivos.join(" | "),
-            data: reading.timestamp,
-          };
-        }
-      }
-    }
-
-    return null;
-  }, [overviews]);
 
   return (
     <div className="content">
