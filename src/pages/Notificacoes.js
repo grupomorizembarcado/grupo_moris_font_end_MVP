@@ -41,7 +41,7 @@ function makeRow({ shed, tipo, valorMedio, status, timestamp, descricaoCustomiza
 const Notificacoes = () => {
   const [loading, setLoading] = useState(false);
   const [historico, setHistorico] = useState([]);
-  const [overviews, setOverviews] = useState([]);
+  const [setOverviews] = useState([]);
 
   const fetchDados = async () => {
     try {
