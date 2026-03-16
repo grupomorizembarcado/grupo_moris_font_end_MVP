@@ -1,10 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Button from "../components/ui/Button";
 import { FaSyncAlt } from "react-icons/fa";
 import "../styles/Notificacoes.css";
 
 const BASE_URL = "https://api-granjatech.onrender.com";
-const TEMPERATURE_HUMIDITY_URL = `${BASE_URL}/api/environmentalMetrics`;
 
 function formatarData(iso) {
   if (!iso) return "-";
@@ -206,20 +205,6 @@ const Notificacoes = () => {
 
     return null;
   }, [overviews]);
-
-  const reconhecerAlerta = () => {
-    if (!alertaCritico) return;
-
-    setHistorico((prev) =>
-      prev.map((h) => {
-        const mesmoGalpao = h.galpao === alertaCritico.galpao;
-        if (mesmoGalpao && h.nivel === "critico" && !h.reconhecido) {
-          return { ...h, reconhecido: true, status: "resolvido" };
-        }
-        return h;
-      })
-    );
-  };
 
   return (
     <div className="content">
